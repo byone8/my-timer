@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f0f0f0;
+        }
+        #timer {
+            font-size: 60px;
+            margin: 30px;
+            color: #333;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+        }
+        button:last-child {
+            background: #f44336;
+        }
+        #result {
+            margin-top: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="timer">00:00:00.000</div>
+    <div>
+        <button onclick="startTimer()">시작</button>
+        <button onclick="stopTimer()">정지</button>
+    </div>
+    <div id="result"></div>
+
+    <script>
+        let startTime = null;
+        let timerInterval = null;
+        const storageKey = "simpleTimer";
+
+        // 저장된 시간 불러오기
+        if(localStorage.getItem(storageKey)) {
+            startTime = parseInt(localStorage.getItem(storageKey));
+            timerInterval = setInterval(updateTimer, 10);
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            localStorage.setItem(storageKey, startTime);
+            timerInterval = setInterval(updateTimer, 10);
+            document.getElementById('result').textContent = '측정 시작!';
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
+            const duration = ((Date.now() - startTime)/1000).toFixed(3);
+            document.getElementById('result').textContent = 
+                `총 소요시간: ${duration}초`;
+        }
+
+        function updateTimer() {
+            if(!startTime) return;
+            
+            const elapsed = Date.now() - startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const milliseconds = elapsed % 1000;
+
+            document.getElementById('timer').textContent = 
+                `${String(hours).padStart(2, '0')}:` +
+                `${String(minutes).padStart(2, '0')}:` +
+                `${String(seconds).padStart(2, '0')}.` +
+                `${String(milliseconds).padStart(3, '0')}`;
+        }
+
+        // 초기 화면 업데이트
+        updateTimer();
+    </script>
+</body>
+</html>
