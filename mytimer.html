@@ -1,75 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple Timer</title>
+    <title>도전실패성공</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             text-align: center;
             padding: 50px;
-            background: #f0f0f0;
+            background: #ffffff;
+            color: #1d1d1f;
+            margin: 0;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+        }
+        h1 {
+            font-size: 40px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #1d1d1f;
         }
         #timer {
-            font-size: 60px;
+            font-size: 76px;
+            font-weight: 500;
             margin: 30px;
-            color: #333;
+            color: #1d1d1f;
             padding: 20px;
-            background: white;
-            border-radius: 10px;
-            display: inline-block;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            letter-spacing: -0.005em;
         }
         button {
             padding: 12px 30px;
-            font-size: 18px;
+            font-size: 17px;
             margin: 10px;
             border: none;
-            border-radius: 5px;
+            border-radius: 980px;
             cursor: pointer;
-            background: #4CAF50;
             color: white;
+            font-weight: 400;
+            transition: all 0.2s ease;
         }
-        button:last-child {
-            background: #f44336;
+        #startBtn { 
+            background: #0071e3;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        #startBtn:hover {
+            background: #0077ED;
+        }
+        #stopBtn { 
+            background: #ff3b30;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        #stopBtn:hover {
+            background: #FF453A;
+        }
+        #resetBtn { 
+            background: #8e8e93;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        #resetBtn:hover {
+            background: #98989D;
         }
         #result {
+            margin-top: 30px;
+            color: #86868b;
+            font-size: 17px;
+            line-height: 1.6;
+        }
+        .button-container {
+            margin: 20px 0;
+        }
+        .success-time {
+            font-size: 24px;
+            font-weight: bold;
             margin-top: 20px;
-            color: #666;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
-    <div id="timer">00:00:00.000</div>
-    <div>
-        <button onclick="startTimer()">시작</button>
-        <button onclick="stopTimer()">정지</button>
+    <h1>도전실패성공</h1>
+    <div id="timer">00:00:00.00</div>
+    <div class="button-container">
+        <button id="startBtn" onclick="startTimer()">시작</button>
+        <button id="stopBtn" onclick="stopTimer()">정지</button>
+        <button id="resetBtn" onclick="resetTimer()">초기화</button>
     </div>
     <div id="result"></div>
-
     <script>
         let startTime = null;
         let timerInterval = null;
         const storageKey = "simpleTimer";
+        let startDate = null;
 
-        // 저장된 시간 불러오기
+        function formatTime(date) {
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
+                   `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function formatDuration(elapsed) {
+            const days = Math.floor(elapsed / 86400000);
+            const hours = Math.floor((elapsed % 86400000) / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
+        }
+
         if(localStorage.getItem(storageKey)) {
             startTime = parseInt(localStorage.getItem(storageKey));
+            startDate = new Date(startTime);
             timerInterval = setInterval(updateTimer, 10);
         }
 
         function startTimer() {
             startTime = Date.now();
+            startDate = new Date();
             localStorage.setItem(storageKey, startTime);
             timerInterval = setInterval(updateTimer, 10);
-            document.getElementById('result').textContent = '측정 시작!';
+            document.getElementById('result').textContent = '';
         }
 
         function stopTimer() {
             clearInterval(timerInterval);
             localStorage.removeItem(storageKey);
-            const duration = ((Date.now() - startTime)/1000).toFixed(3);
-            document.getElementById('result').textContent = 
-                `총 소요시간: ${duration}초`;
+            
+            const stopDate = new Date();
+            const elapsed = stopDate - startDate;
+            
+            document.getElementById('result').innerHTML = 
+                `시작시간: ${formatTime(startDate)}<br>` +
+                `정지시간: ${formatTime(stopDate)}<br>` +
+                `<div class="success-time">도전실패성공시간<br>${formatDuration(elapsed)}</div>`;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
+            startTime = null;
+            document.getElementById('timer').textContent = '00:00:00.00';
+            document.getElementById('result').textContent = '';
         }
 
         function updateTimer() {
@@ -79,16 +146,14 @@
             const hours = Math.floor(elapsed / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
-            const milliseconds = elapsed % 1000;
-
+            const centiseconds = Math.floor((elapsed % 1000) / 10);
             document.getElementById('timer').textContent = 
                 `${String(hours).padStart(2, '0')}:` +
                 `${String(minutes).padStart(2, '0')}:` +
                 `${String(seconds).padStart(2, '0')}.` +
-                `${String(milliseconds).padStart(3, '0')}`;
+                `${String(centiseconds).padStart(2, '0')}`;
         }
 
-        // 초기 화면 업데이트
         updateTimer();
     </script>
 </body>
