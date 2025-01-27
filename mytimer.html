@@ -59,6 +59,13 @@
         #resetBtn:hover {
             background: #98989D;
         }
+         #projectName {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+         }
         #result {
             margin-top: 30px;
             color: #86868b;
@@ -84,13 +91,15 @@
         <button id="stopBtn" onclick="stopTimer()">정지</button>
         <button id="resetBtn" onclick="resetTimer()">초기화</button>
     </div>
+   <input type="text" id="projectName" placeholder="도전명 입력">
+    <div id="projectDisplay"></div>
     <div id="result"></div>
     <script>
         let startTime = null;
         let timerInterval = null;
         const storageKey = "simpleTimer";
         let startDate = null;
-
+         let projectName = '';
         function formatTime(date) {
             return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
                    `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -111,6 +120,8 @@
         }
 
         function startTimer() {
+             projectName = document.getElementById('projectName').value;
+             document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
             startTime = Date.now();
             startDate = new Date();
             localStorage.setItem(storageKey, startTime);
@@ -128,7 +139,7 @@
             document.getElementById('result').innerHTML = 
                 `시작시간: ${formatTime(startDate)}<br>` +
                 `정지시간: ${formatTime(stopDate)}<br>` +
-                `<div class="success-time">도전실패성공시간<br>${formatDuration(elapsed)}</div>`;
+                `<div class="success-time">${projectName} 성공시간<br>${formatDuration(elapsed)}</div>`;
         }
 
         function resetTimer() {
@@ -136,6 +147,7 @@
             localStorage.removeItem(storageKey);
             startTime = null;
             document.getElementById('timer').textContent = '00:00:00.00';
+             document.getElementById('projectDisplay').textContent = '';
             document.getElementById('result').textContent = '';
         }
 
