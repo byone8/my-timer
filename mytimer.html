@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -128,9 +129,9 @@
     <script>
         let startTime = null;
         let timerInterval = null;
+        const storageKey = "simpleTimer";
         let startDate = null;
         let projectName = '';
-        let isRunning = false; // 타이머 작동 여부를 추적하는 변수
 
         // 페이지 로드 시 저장된 프로젝트명 불러오기
         if(localStorage.getItem('projectName')) {
@@ -151,29 +152,32 @@
             return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
         }
 
-        function startTimer() {
-            if (isRunning) return; // 타이머가 이미 작동 중이면 중복 시작 방지
+        if(localStorage.getItem(storageKey)) {
+            startTime = parseInt(localStorage.getItem(storageKey));
+            startDate = new Date(startTime);
+            timerInterval = setInterval(updateTimer, 10);
+            document.getElementById('timer').classList.add('running'); // 타이머가 실행 중일 때 흔들림 효과 추가
+        }
 
+        function startTimer() {
             projectName = document.getElementById('projectName').value;
             localStorage.setItem('projectName', projectName);
             document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
             startTime = Date.now();
-            startDate = new Date(startTime); // 시작시간을 현재 시간으로 설정
+            startDate = new Date();
+            localStorage.setItem(storageKey, startTime);
             timerInterval = setInterval(updateTimer, 10);
             document.getElementById('result').textContent = '';
             document.getElementById('timer').classList.add('running'); // 타이머 시작 시 흔들림 효과 추가
-            isRunning = true; // 타이머 작동 상태로 변경
         }
 
         function stopTimer() {
-            if (!isRunning) return; // 타이머가 작동 중이 아니면 정지 방지
-
             clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
             document.getElementById('timer').classList.remove('running'); // 타이머 정지 시 흔들림 효과 제거
-            isRunning = false; // 타이머 작동 상태로 변경
-
+            
             const stopDate = new Date();
-            const elapsed = stopDate - startDate; // 시작 시간 기준으로 경과 시간 계산
+            const elapsed = stopDate - startDate;
             
             document.getElementById('result').innerHTML = 
                 `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
@@ -183,17 +187,17 @@
 
         function resetTimer() {
             clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
             startTime = null;
             document.getElementById('timer').textContent = '00:00:00.00';
             document.getElementById('projectDisplay').textContent = '';
             document.getElementById('result').textContent = '';
             document.getElementById('timer').classList.remove('running'); // 타이머 초기화 시 흔들림 효과 제거
-            isRunning = false; // 타이머 작동 상태 초기화
         }
 
         function updateTimer() {
-            if (!startTime) return;
-
+            if(!startTime) return;
+            
             const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
@@ -206,7 +210,6 @@
                 `${String(centiseconds).padStart(2, '0')}`;
         }
 
-        // 페이지 로드 시 타이머 상태 확인 및 복원
         updateTimer();
     </script>
 </body>
