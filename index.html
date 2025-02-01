@@ -13,13 +13,14 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+             padding: 10px;
             background: #ffffff;
             color: #1d1d1f;
             margin: 0;
             line-height: 1.47059;
             letter-spacing: -0.022em;
             min-height: 100vh;
+            box-sizing: border-box;
         }
         h1 {
             font-size: 40px;
@@ -34,7 +35,10 @@
             margin: 1px;
             color: #1d1d1f;
             padding: 1px;
-            letter-spacing: -0.005em;
+             letter-spacing: -0.005em;
+             white-space: nowrap;
+             max-width: 100%;
+             box-sizing: border-box;
         }
         /* 타이머가 작동 중일 때만 흔들림 효과 적용 */
         #timer.running {
@@ -47,16 +51,20 @@
             75% { transform: translateY(-1px); }
             100% { transform: translateX(0); }
         }
-        button {
-            padding: 12px 30px;
+         button {
+            padding: 12px 20px;
             font-size: 17px;
-            margin: 5px;
             border: none;
             border-radius: 980px;
             cursor: pointer;
             color: white;
             font-weight: 400;
             transition: all 0.2s ease;
+            flex: 0 1 auto;
+            width: auto;
+            min-width: 80px;
+            margin: 5px;
+             box-sizing: border-box;
         }
         #startBtn {
             background: #0071e3;
@@ -106,8 +114,9 @@
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
+            box-sizing: border-box;
         }
-        .success-time {
+         .success-time {
             font-size: 18px;
             color: #000000;
             font-weight: bold;
