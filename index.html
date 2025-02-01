@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <style>
-        /* 기존 스타일 코드 유지 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             text-align: center;
@@ -18,7 +17,103 @@
             line-height: 1.47059;
             letter-spacing: -0.022em;
         }
-        /* ... 나머지 스타일 코드는 동일하게 유지 ... */
+        h1 {
+            font-size: 40px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1d1d1f;
+            font-family: -apple-system,
+        }
+        #timer {
+            font-size: 76px;
+            font-weight: 700;
+            margin: 1px;
+            color: #1d1d1f;
+            padding: 1px;
+            letter-spacing: -0.005em;
+        }
+        /* 타이머가 작동 중일 때만 흔들림 효과 적용 */
+        #timer.running {
+            animation: vibrate 0.1s infinite;
+        }
+        @keyframes vibrate {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            50% { transform: translateY(1px); }
+            75% { transform: translateY(-1px); }
+            100% { transform: translateX(0); }
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 17px;
+            margin: 10px;
+            border: none;
+            border-radius: 980px;
+            cursor: pointer;
+            color: white;
+            font-weight: 400;
+            transition: all 0.2s ease;
+        }
+        #startBtn {
+            background: #0071e3;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        #startBtn:hover {
+            background: #0077ED;
+        }
+        #stopBtn {
+            background: #ff3b30;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        #stopBtn:hover {
+            background: #FF453A;
+        }
+        #resetBtn {
+            background: #8e8e93;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        #resetBtn:hover {
+            background: #98989D;
+        }
+        #projectName {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 15px;
+            font-weight: 600;
+            width: 80%;
+            max-width: 400px;
+            color: #86868b;
+        }
+        #projectDisplay {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        #result {
+            margin-top: 30px;
+            color: #86868b;
+            font-size: 17px;
+            line-height: 1.6;
+        }
+        .button-container {
+            margin: 10px 0;
+        }
+         .success-time {
+            font-size: 18px;
+            color: #000000;
+            font-weight: bold;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+        .success-time div {
+            font-size: 22px;
+            color: blue;
+        }
+        .start-stop-time {
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -37,7 +132,7 @@
     <script>
         // Firebase 설정
         const firebaseConfig = {
-            apiKey: "AIzaSyC9Op8FAlwYfQ39MLeYkWSaRe_49R80SxQ",
+           apiKey: "AIzaSyC9Op8FAlwYfQ39MLeYkWSaRe_49R80SxQ",
             authDomain: "timer-7d58b.firebaseapp.com",
             databaseURL: "https://timer-7d58b-default-rtdb.firebaseio.com",
             projectId: "timer-7d58b",
@@ -65,10 +160,10 @@
                     startTime = data.startTime;
                     startDate = new Date(startTime);
                     projectName = data.projectName;
-                    
+
                     document.getElementById('projectName').value = projectName;
                     document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
-                    
+
                     if (!timerInterval) {
                         timerInterval = setInterval(updateTimer, 10);
                         document.getElementById('timer').classList.add('running');
@@ -91,14 +186,14 @@
             const hours = Math.floor((elapsed % 86400000) / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
-            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
+           return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
         }
 
         function startTimer() {
             projectName = document.getElementById('projectName').value;
             startTime = Date.now();
             startDate = new Date();
-            
+
             // Firebase에 타이머 상태 저장
             timerRef.set({
                 isRunning: true,
@@ -117,8 +212,8 @@
 
             const stopDate = new Date();
             const elapsed = stopDate - startDate;
-            
-            document.getElementById('result').innerHTML = 
+
+            document.getElementById('result').innerHTML =
                 `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
                 `정지시간: ${formatTime(stopDate)}</div><br>` +
                 `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
@@ -140,13 +235,13 @@
 
         function updateTimer() {
             if(!startTime) return;
-            
+
             const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
             const centiseconds = Math.floor((elapsed % 1000) / 10);
-            document.getElementById('timer').textContent = 
+            document.getElementById('timer').textContent =
                 `${String(hours).padStart(2, '0')}:` +
                 `${String(minutes).padStart(2, '0')}:` +
                 `${String(seconds).padStart(2, '0')}.` +
