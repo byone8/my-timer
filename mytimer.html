@@ -2,146 +2,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>도전실패성공</title>
+    <title>나만의 타이머</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            text-align: center;
-            padding: 50px;
-            background: #ffffff;
-            color: #1d1d1f;
-            margin: 0;
-            line-height: 1.47059;
-            letter-spacing: -0.022em;
-        }
-        h1 {
-            font-size: 40px;
-            font-weight: 600;
-            margin-bottom: 40px;
-            color: #1d1d1f;
-        }
-        #timer {
-            font-size: 76px;
-            font-weight: 500;
-            margin: 30px;
-            color: #1d1d1f;
-            padding: 20px;
-            letter-spacing: -0.005em;
-        }
-        button {
-            padding: 12px 30px;
-            font-size: 17px;
-            margin: 10px;
-            border: none;
-            border-radius: 980px;
-            cursor: pointer;
-            color: white;
-            font-weight: 400;
-            transition: all 0.2s ease;
-        }
-        #startBtn { 
-            background: #0071e3;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }
-        #startBtn:hover {
-            background: #0077ED;
-        }
-        #stopBtn { 
-            background: #ff3b30;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }
-        #stopBtn:hover {
-            background: #FF453A;
-        }
-        #resetBtn { 
-            background: #8e8e93;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }
-        #resetBtn:hover {
-            background: #98989D;
-        }
-        #result {
-            margin-top: 30px;
-            color: #86868b;
-            font-size: 17px;
-            line-height: 1.6;
-        }
-        .button-container {
-            margin: 20px 0;
-        }
+        body { text-align: center; font-family: '맑은 고딕'; padding: 20px; }
+        #timer { font-size: 50px; color: green; margin: 30px; }
+        button { padding: 15px 30px; font-size: 20px; margin: 10px; 
+                border: none; border-radius: 10px; cursor: pointer; }
+        #startBtn { background: blue; color: white; }
+        #stopBtn { background: red; color: white; }
+        #result { margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>도전실패성공</h1>
-    <div id="timer">00:00:00.00</div>
-    <div class="button-container">
-        <button id="startBtn" onclick="startTimer()">시작</button>
-        <button id="stopBtn" onclick="stopTimer()">정지</button>
-        <button id="resetBtn" onclick="resetTimer()">초기화</button>
-    </div>
+    <h1>⏰ 내 타이머 ⏰</h1>
+    <div id="timer">00:00:00</div>
+    <button id="startBtn" onclick="start()">시작!</button>
+    <button id="stopBtn" onclick="stop()">종료!</button>
     <div id="result"></div>
+
     <script>
-        let startTime = null;
-        let timerInterval = null;
-        const storageKey = "simpleTimer";
-        let startDate = null;
+        let startTime, timer;
+        const storageKey = "myTimer";
 
-        function formatTime(date) {
-            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
-                   `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        }
-
+        // 저장된 시간 불러오기
         if(localStorage.getItem(storageKey)) {
-            startTime = parseInt(localStorage.getItem(storageKey));
-            startDate = new Date(startTime);
-            timerInterval = setInterval(updateTimer, 10);
+            startTime = new Date(Number(localStorage.getItem(storageKey)));
+            timer = setInterval(update, 1000);
+            update();
         }
 
-        function startTimer() {
-            startTime = Date.now();
-            startDate = new Date();
-            localStorage.setItem(storageKey, startTime);
-            timerInterval = setInterval(updateTimer, 10);
-            document.getElementById('result').textContent = '';
+        function start() {
+            startTime = new Date();
+            localStorage.setItem(storageKey, startTime.getTime());
+            timer = setInterval(update, 1000);
+            document.getElementById('result').innerHTML = "시작: " + getTimeString(startTime);
         }
 
-        function stopTimer() {
-            clearInterval(timerInterval);
+        function stop() {
+            clearInterval(timer);
             localStorage.removeItem(storageKey);
-            
-            const stopDate = new Date();
-            const successDate = new Date();
-            
-            document.getElementById('result').innerHTML = 
-                `시작시간: ${formatTime(startDate)}<br>` +
-                `정지시간: ${formatTime(stopDate)}<br>` +
-                `도전성공시간: ${formatTime(successDate)}`;
+            const endTime = new Date();
+            const total = Math.round((endTime - startTime)/1000);
+            document.getElementById('result').innerHTML += "<br>종료: " + getTimeString(endTime) +
+                                                          "<br>총 " + total + "초 걸림!";
         }
 
-        function resetTimer() {
-            clearInterval(timerInterval);
-            localStorage.removeItem(storageKey);
-            startTime = null;
-            document.getElementById('timer').textContent = '00:00:00.00';
-            document.getElementById('result').textContent = '';
+        function update() {
+            const now = new Date();
+            const diff = new Date(now - startTime);
+            document.getElementById('timer').innerHTML = 
+                diff.getUTCHours().toString().padStart(2,'0') + ":" +
+                diff.getUTCMinutes().toString().padStart(2,'0') + ":" +
+                diff.getUTCSeconds().toString().padStart(2,'0');
         }
 
-        function updateTimer() {
-            if(!startTime) return;
-            
-            const elapsed = Date.now() - startTime;
-            const hours = Math.floor(elapsed / 3600000);
-            const minutes = Math.floor((elapsed % 3600000) / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
-            const centiseconds = Math.floor((elapsed % 1000) / 10);
-            document.getElementById('timer').textContent = 
-                `${String(hours).padStart(2, '0')}:` +
-                `${String(minutes).padStart(2, '0')}:` +
-                `${String(seconds).padStart(2, '0')}.` +
-                `${String(centiseconds).padStart(2, '0')}`;
+        function getTimeString(date) {
+            return date.getFullYear() + "년 " + (date.getMonth()+1) + "월 " + date.getDate() + "일 " +
+                   date.getHours() + "시 " + date.getMinutes() + "분 " + date.getSeconds() + "초";
         }
-
-        updateTimer();
     </script>
 </body>
 </html>
