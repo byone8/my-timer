@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <style>
-        /* 기존 스타일 유지 */
+        /* 기존 스타일은 유지하되 모바일 터치 관련 스타일 추가 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             text-align: center;
@@ -17,7 +17,9 @@
             margin: 0;
             line-height: 1.47059;
             letter-spacing: -0.022em;
+            touch-action: manipulation; /* 모바일에서 더블탭 줌 방지 */
         }
+        /* 나머지 기존 스타일 유지 */
         h1 {
             font-size: 40px;
             font-weight: 600;
@@ -32,6 +34,8 @@
             color: #1d1d1f;
             padding: 1px;
             letter-spacing: -0.005em;
+            -webkit-touch-callout: none; /* iOS에서 길게 누르기 방지 */
+            user-select: none; /* 텍스트 선택 방지 */
         }
         #timer.running {
             animation: vibrate 0.1s infinite;
@@ -53,6 +57,7 @@
             color: white;
             font-weight: 400;
             transition: all 0.2s ease;
+            touch-action: manipulation; /* 모바일에서 더블탭 줌 방지 */
         }
         #startBtn { 
             background: #0071e3;
@@ -121,59 +126,56 @@
     <img src="gogo.gif" alt="gogo" style="width: 300px; height: auto;">
     <div id="timer">00:00:00.00</div>
     <div class="button-container">
-        <button id="startBtn" onclick="startTimer()">시작</button>
-        <button id="stopBtn" onclick="stopTimer()">정지</button>
-        <button id="resetBtn" onclick="resetTimer()">초기화</button>
+        <button id="startBtn" type="button">시작</button>
+        <button id="stopBtn" type="button">정지</button>
+        <button id="resetBtn" type="button">초기화</button>
     </div>
     <input type="text" id="projectName" placeholder="도전명 입력">
     <div id="projectDisplay"></div>
     <div id="result"></div>
 
-    <!-- Firebase SDK 추가 -->
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
-
     <script>
-        // Firebase 설정
-        const firebaseConfig = {
-            // Firebase 콘솔에서 가져온 설정을 여기에 넣으세요
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-
-        // Firebase 초기화
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const timerRef = database.ref('timer');
-
+        // 전역 변수 선언
+        let startTime = null;
         let timerInterval = null;
+        const storageKey = "simpleTimer";
         let startDate = null;
         let projectName = '';
 
-        // Firebase에서 타이머 상태 불러오기
-        function loadTimerState() {
-            timerRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    if (data.startTime) {
-                        startDate = new Date(data.startTime);
-                        if (!timerInterval) {
-                            timerInterval = setInterval(updateTimer, 10);
-                        }
-                        document.getElementById('timer').classList.add('running');
-                    }
-                    if (data.projectName) {
-                        projectName = data.projectName;
-                        document.getElementById('projectName').value = projectName;
-                        document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
-                    }
-                }
-            });
+        // DOM 요소 참조
+        const timerElement = document.getElementById('timer');
+        const projectNameInput = document.getElementById('projectName');
+        const projectDisplayElement = document.getElementById('projectDisplay');
+        const resultElement = document.getElementById('result');
+        const startButton = document.getElementById('startBtn');
+        const stopButton = document.getElementById('stopBtn');
+        const resetButton = document.getElementById('resetBtn');
+
+        // 이벤트 리스너 설정
+        function addEventListeners() {
+            // 모바일과 데스크톱 모두 지원하도록 이벤트 추가
+            startButton.addEventListener('touchstart', handleStart, false);
+            startButton.addEventListener('click', handleStart, false);
+            stopButton.addEventListener('touchstart', handleStop, false);
+            stopButton.addEventListener('click', handleStop, false);
+            resetButton.addEventListener('touchstart', handleReset, false);
+            resetButton.addEventListener('click', handleReset, false);
+        }
+
+        // 이벤트 핸들러 함수들
+        function handleStart(e) {
+            e.preventDefault(); // 기본 이벤트 동작 방지
+            startTimer();
+        }
+
+        function handleStop(e) {
+            e.preventDefault();
+            stopTimer();
+        }
+
+        function handleReset(e) {
+            e.preventDefault();
+            resetTimer();
         }
 
         // 시간 포맷팅 함수
@@ -191,45 +193,63 @@
             return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
         }
 
+        // 저장된 상태 로드
+        function loadSavedState() {
+            try {
+                const savedState = localStorage.getItem(storageKey);
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    startTime = state.startTime;
+                    projectName = state.projectName;
+                    startDate = new Date(startTime);
+                    
+                    if (startTime) {
+                        timerInterval = setInterval(updateTimer, 10);
+                        timerElement.classList.add('running');
+                        projectNameInput.value = projectName;
+                        projectDisplayElement.textContent = "프로젝트명: " + projectName;
+                    }
+                }
+            } catch (error) {
+                console.error('상태 로드 중 오류:', error);
+                resetTimer(); // 오류 발생 시 초기화
+            }
+        }
+
         // 타이머 시작
         function startTimer() {
-            projectName = document.getElementById('projectName').value;
+            startTime = Date.now();
             startDate = new Date();
-            
-            // Firebase에 상태 저장
-            timerRef.set({
-                startTime: startDate.getTime(),
-                projectName: projectName,
-                isRunning: true
-            });
+            projectName = projectNameInput.value;
+
+            // 상태 저장
+            const state = {
+                startTime: startTime,
+                projectName: projectName
+            };
+            localStorage.setItem(storageKey, JSON.stringify(state));
 
             timerInterval = setInterval(updateTimer, 10);
-            document.getElementById('result').textContent = '';
-            document.getElementById('timer').classList.add('running');
+            resultElement.textContent = '';
+            timerElement.classList.add('running');
+            projectDisplayElement.textContent = "프로젝트명: " + projectName;
         }
 
         // 타이머 정지
         function stopTimer() {
+            if (!startTime) return;
+
             clearInterval(timerInterval);
-            timerInterval = null;
-            
             const stopDate = new Date();
             const elapsed = stopDate - startDate;
-            
-            // Firebase에서 타이머 상태 제거
-            timerRef.set({
-                startTime: null,
-                isRunning: false,
-                lastResult: {
-                    startTime: startDate.getTime(),
-                    stopTime: stopDate.getTime(),
-                    projectName: projectName,
-                    elapsed: elapsed
-                }
-            });
 
-            document.getElementById('timer').classList.remove('running');
-            document.getElementById('result').innerHTML = 
+            // 상태 초기화 및 저장
+            localStorage.removeItem(storageKey);
+            startTime = null;
+            timerInterval = null;
+
+            timerElement.classList.remove('running');
+            resultElement.innerHTML = 
                 `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
                 `정지시간: ${formatTime(stopDate)}</div><br>` +
                 `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
@@ -238,36 +258,51 @@
         // 타이머 초기화
         function resetTimer() {
             clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
+            startTime = null;
             timerInterval = null;
-            
-            // Firebase에서 타이머 상태 초기화
-            timerRef.set(null);
+            projectName = '';
 
-            document.getElementById('timer').textContent = '00:00:00.00';
-            document.getElementById('projectDisplay').textContent = '';
-            document.getElementById('result').textContent = '';
-            document.getElementById('timer').classList.remove('running');
+            timerElement.textContent = '00:00:00.00';
+            timerElement.classList.remove('running');
+            projectNameInput.value = '';
+            projectDisplayElement.textContent = '';
+            resultElement.textContent = '';
         }
 
         // 타이머 업데이트
         function updateTimer() {
-            if (!startDate) return;
-            
-            const elapsed = Date.now() - startDate.getTime();
+            if (!startTime) return;
+
+            const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
             const centiseconds = Math.floor((elapsed % 1000) / 10);
-            
-            document.getElementById('timer').textContent = 
+
+            timerElement.textContent = 
                 `${String(hours).padStart(2, '0')}:` +
                 `${String(minutes).padStart(2, '0')}:` +
                 `${String(seconds).padStart(2, '0')}.` +
                 `${String(centiseconds).padStart(2, '0')}`;
         }
 
-        // 페이지 로드 시 Firebase에서 상태 불러오기
-        loadTimerState();
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            addEventListeners();
+            loadSavedState();
+        });
+
+        // 페이지 언로드 시 상태 저장
+        window.addEventListener('beforeunload', () => {
+            if (startTime) {
+                const state = {
+                    startTime: startTime,
+                    projectName: projectName
+                };
+                localStorage.setItem(storageKey, JSON.stringify(state));
+            }
+        });
     </script>
 </body>
 </html>
