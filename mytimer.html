@@ -3,6 +3,9 @@
 <head>
     <title>도전실패성공</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -19,7 +22,7 @@
             font-weight: 600;
             margin-bottom: 20px;
             color: #1d1d1f;
-            font-family: -apple-system, 
+            font-family: -apple-system;
         }
         #timer {
             font-size: 76px;
@@ -29,7 +32,6 @@
             padding: 1px;
             letter-spacing: -0.005em;
         }
-        /* 타이머가 작동 중일 때만 흔들림 효과 적용 */
         #timer.running {
             animation: vibrate 0.1s infinite;
         }
@@ -132,17 +134,28 @@
         let startDate = null;
         let projectName = '';
 
-        // 페이지 로드 시 저장된 프로젝트명 불러오기
-        if(localStorage.getItem('projectName')) {
-            document.getElementById('projectName').value = localStorage.getItem('projectName');
-            document.getElementById('projectDisplay').textContent = "프로젝트명: " + localStorage.getItem('projectName');
+        // 페이지 로드 시 저장된 프로젝트명 및 타이머 상태 불러오기
+        function loadSavedState() {
+            if (localStorage.getItem('projectName')) {
+                projectName = localStorage.getItem('projectName');
+                document.getElementById('projectName').value = projectName;
+                document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
+            }
+            if (localStorage.getItem(storageKey)) {
+                startTime = parseInt(localStorage.getItem(storageKey));
+                startDate = new Date(startTime);
+                timerInterval = setInterval(updateTimer, 10);
+                document.getElementById('timer').classList.add('running');
+            }
         }
 
+        // 시간 포맷팅 함수
         function formatTime(date) {
             return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
                    `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         }
 
+        // 경과 시간 포맷팅 함수
         function formatDuration(elapsed) {
             const days = Math.floor(elapsed / 86400000);
             const hours = Math.floor((elapsed % 86400000) / 3600000);
@@ -151,13 +164,7 @@
             return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
         }
 
-        if(localStorage.getItem(storageKey)) {
-            startTime = parseInt(localStorage.getItem(storageKey));
-            startDate = new Date(startTime);
-            timerInterval = setInterval(updateTimer, 10);
-            document.getElementById('timer').classList.add('running'); // 타이머가 실행 중일 때 흔들림 효과 추가
-        }
-
+        // 타이머 시작
         function startTimer() {
             projectName = document.getElementById('projectName').value;
             localStorage.setItem('projectName', projectName);
@@ -167,13 +174,14 @@
             localStorage.setItem(storageKey, startTime);
             timerInterval = setInterval(updateTimer, 10);
             document.getElementById('result').textContent = '';
-            document.getElementById('timer').classList.add('running'); // 타이머 시작 시 흔들림 효과 추가
+            document.getElementById('timer').classList.add('running');
         }
 
+        // 타이머 정지
         function stopTimer() {
             clearInterval(timerInterval);
             localStorage.removeItem(storageKey);
-            document.getElementById('timer').classList.remove('running'); // 타이머 정지 시 흔들림 효과 제거
+            document.getElementById('timer').classList.remove('running');
             
             const stopDate = new Date();
             const elapsed = stopDate - startDate;
@@ -184,6 +192,7 @@
                 `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
         }
 
+        // 타이머 초기화
         function resetTimer() {
             clearInterval(timerInterval);
             localStorage.removeItem(storageKey);
@@ -191,11 +200,12 @@
             document.getElementById('timer').textContent = '00:00:00.00';
             document.getElementById('projectDisplay').textContent = '';
             document.getElementById('result').textContent = '';
-            document.getElementById('timer').classList.remove('running'); // 타이머 초기화 시 흔들림 효과 제거
+            document.getElementById('timer').classList.remove('running');
         }
 
+        // 타이머 업데이트
         function updateTimer() {
-            if(!startTime) return;
+            if (!startTime) return;
             
             const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
@@ -209,6 +219,8 @@
                 `${String(centiseconds).padStart(2, '0')}`;
         }
 
+        // 페이지 로드 시 저장된 상태 불러오기
+        loadSavedState();
         updateTimer();
     </script>
 </body>
