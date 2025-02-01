@@ -3,8 +3,6 @@
 <head>
     <title>도전실패성공</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -21,6 +19,7 @@
             font-weight: 600;
             margin-bottom: 20px;
             color: #1d1d1f;
+            font-family: -apple-system, 
         }
         #timer {
             font-size: 76px;
@@ -30,6 +29,7 @@
             padding: 1px;
             letter-spacing: -0.005em;
         }
+        /* 타이머가 작동 중일 때만 흔들림 효과 적용 */
         #timer.running {
             animation: vibrate 0.1s infinite;
         }
@@ -126,55 +126,17 @@
     <div id="projectDisplay"></div>
     <div id="result"></div>
     <script>
-        // Firebase 초기화
-        const firebaseConfig = {
-            // Firebase 콘솔에서 가져온 설정을 여기에 넣으세요
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const timerRef = database.ref('timer');
-
         let startTime = null;
         let timerInterval = null;
         let startDate = null;
         let projectName = '';
+        let isRunning = false; // 타이머 작동 여부를 추적하는 변수
 
-        // Firebase에서 타이머 상태 감시
-        timerRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                if (data.isRunning) {
-                    startTime = data.startTime;
-                    startDate = new Date(startTime);
-                    if (!timerInterval) {
-                        timerInterval = setInterval(updateTimer, 10);
-                        document.getElementById('timer').classList.add('running');
-                    }
-                    if (data.projectName) {
-                        projectName = data.projectName;
-                        document.getElementById('projectName').value = projectName;
-                        document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
-                    }
-                } else {
-                    if (timerInterval) {
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                        document.getElementById('timer').classList.remove('running');
-                    }
-                    if (data.result) {
-                        document.getElementById('result').innerHTML = data.result;
-                    }
-                }
-            }
-        });
+        // 페이지 로드 시 저장된 프로젝트명 불러오기
+        if(localStorage.getItem('projectName')) {
+            document.getElementById('projectName').value = localStorage.getItem('projectName');
+            document.getElementById('projectDisplay').textContent = "프로젝트명: " + localStorage.getItem('projectName');
+        }
 
         function formatTime(date) {
             return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
@@ -190,45 +152,48 @@
         }
 
         function startTimer() {
+            if (isRunning) return; // 타이머가 이미 작동 중이면 중복 시작 방지
+
             projectName = document.getElementById('projectName').value;
+            localStorage.setItem('projectName', projectName);
+            document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
             startTime = Date.now();
-            startDate = new Date();
-            
-            // Firebase에 타이머 상태 저장
-            timerRef.set({
-                isRunning: true,
-                startTime: startTime,
-                projectName: projectName
-            });
+            startDate = new Date(startTime); // 시작시간을 현재 시간으로 설정
+            timerInterval = setInterval(updateTimer, 10);
+            document.getElementById('result').textContent = '';
+            document.getElementById('timer').classList.add('running'); // 타이머 시작 시 흔들림 효과 추가
+            isRunning = true; // 타이머 작동 상태로 변경
         }
 
         function stopTimer() {
+            if (!isRunning) return; // 타이머가 작동 중이 아니면 정지 방지
+
+            clearInterval(timerInterval);
+            document.getElementById('timer').classList.remove('running'); // 타이머 정지 시 흔들림 효과 제거
+            isRunning = false; // 타이머 작동 상태로 변경
+
             const stopDate = new Date();
-            const elapsed = stopDate - startDate;
+            const elapsed = stopDate - startDate; // 시작 시간 기준으로 경과 시간 계산
             
-            const result = `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
-                          `정지시간: ${formatTime(stopDate)}</div><br>` +
-                          `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
-            
-            // Firebase에 정지 상태 및 결과 저장
-            timerRef.set({
-                isRunning: false,
-                result: result
-            });
+            document.getElementById('result').innerHTML = 
+                `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
+                `정지시간: ${formatTime(stopDate)}</div><br>` +
+                `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
         }
 
         function resetTimer() {
-            // Firebase에서 타이머 데이터 제거
-            timerRef.remove();
+            clearInterval(timerInterval);
+            startTime = null;
             document.getElementById('timer').textContent = '00:00:00.00';
             document.getElementById('projectDisplay').textContent = '';
             document.getElementById('result').textContent = '';
-            document.getElementById('timer').classList.remove('running');
+            document.getElementById('timer').classList.remove('running'); // 타이머 초기화 시 흔들림 효과 제거
+            isRunning = false; // 타이머 작동 상태 초기화
         }
 
         function updateTimer() {
-            if(!startTime) return;
-            
+            if (!startTime) return;
+
             const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
@@ -240,6 +205,9 @@
                 `${String(seconds).padStart(2, '0')}.` +
                 `${String(centiseconds).padStart(2, '0')}`;
         }
+
+        // 페이지 로드 시 타이머 상태 확인 및 복원
+        updateTimer();
     </script>
 </body>
 </html>
