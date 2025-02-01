@@ -4,17 +4,35 @@
     <title>도전실패성공</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Firebase SDK 추가 -->
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
-    <!-- 기존 스타일 코드는 그대로 유지 -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <style>
-        /* 여기에 기존 스타일 코드를 넣으세요 */
+        /* 기존 스타일 코드 유지 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #ffffff;
+            color: #1d1d1f;
+            margin: 0;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+        }
+        /* ... 나머지 스타일 코드는 동일하게 유지 ... */
     </style>
 </head>
 <body>
-    <!-- 기존 HTML 구조 유지 -->
     <h1>도전실패성공</h1>
-    <!-- 나머지 HTML 요소들 -->
+    <img src="gogo.gif" alt="gogo" style="width: 300px; height: auto;">
+    <div id="timer">00:00:00.00</div>
+    <div class="button-container">
+        <button id="startBtn" onclick="startTimer()">시작</button>
+        <button id="stopBtn" onclick="stopTimer()">정지</button>
+        <button id="resetBtn" onclick="resetTimer()">초기화</button>
+    </div>
+    <input type="text" id="projectName" placeholder="도전명 입력">
+    <div id="projectDisplay"></div>
+    <div id="result"></div>
 
     <script>
         // Firebase 설정
@@ -34,7 +52,108 @@
         const database = firebase.database();
         const timerRef = database.ref('timer');
 
-        // 여기에 기존 타이머 코드를 넣으세요
+        let startTime = null;
+        let timerInterval = null;
+        let startDate = null;
+        let projectName = '';
+
+        // Firebase에서 타이머 상태 감시
+        timerRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.isRunning) {
+                    startTime = data.startTime;
+                    startDate = new Date(startTime);
+                    projectName = data.projectName;
+                    
+                    document.getElementById('projectName').value = projectName;
+                    document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
+                    
+                    if (!timerInterval) {
+                        timerInterval = setInterval(updateTimer, 10);
+                        document.getElementById('timer').classList.add('running');
+                    }
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    document.getElementById('timer').classList.remove('running');
+                }
+            }
+        });
+
+        function formatTime(date) {
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
+                   `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function formatDuration(elapsed) {
+            const days = Math.floor(elapsed / 86400000);
+            const hours = Math.floor((elapsed % 86400000) / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
+        }
+
+        function startTimer() {
+            projectName = document.getElementById('projectName').value;
+            startTime = Date.now();
+            startDate = new Date();
+            
+            // Firebase에 타이머 상태 저장
+            timerRef.set({
+                isRunning: true,
+                startTime: startTime,
+                projectName: projectName
+            });
+        }
+
+        function stopTimer() {
+            // Firebase에 타이머 정지 상태 저장
+            timerRef.set({
+                isRunning: false,
+                startTime: null,
+                projectName: null
+            });
+
+            const stopDate = new Date();
+            const elapsed = stopDate - startDate;
+            
+            document.getElementById('result').innerHTML = 
+                `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
+                `정지시간: ${formatTime(stopDate)}</div><br>` +
+                `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
+        }
+
+        function resetTimer() {
+            // Firebase에 타이머 초기화 상태 저장
+            timerRef.set({
+                isRunning: false,
+                startTime: null,
+                projectName: null
+            });
+
+            startTime = null;
+            document.getElementById('timer').textContent = '00:00:00.00';
+            document.getElementById('projectDisplay').textContent = '';
+            document.getElementById('result').textContent = '';
+        }
+
+        function updateTimer() {
+            if(!startTime) return;
+            
+            const elapsed = Date.now() - startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const centiseconds = Math.floor((elapsed % 1000) / 10);
+            document.getElementById('timer').textContent = 
+                `${String(hours).padStart(2, '0')}:` +
+                `${String(minutes).padStart(2, '0')}:` +
+                `${String(seconds).padStart(2, '0')}.` +
+                `${String(centiseconds).padStart(2, '0')}`;
+        }
+
+        updateTimer();
     </script>
 </body>
 </html>
