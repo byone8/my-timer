@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>도전실패성공</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Firebase SDK 추가 -->
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
+    <!-- 기존 스타일 코드는 그대로 유지 -->
+    <style>
+        /* 여기에 기존 스타일 코드를 넣으세요 */
+    </style>
+</head>
+<body>
+    <!-- 기존 HTML 구조 유지 -->
+    <h1>도전실패성공</h1>
+    <!-- 나머지 HTML 요소들 -->
+
+    <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9Op8FAlwYfQ39MLeYkWSaRe_49R80SxQ",
+            authDomain: "timer-7d58b.firebaseapp.com",
+            databaseURL: "https://timer-7d58b-default-rtdb.firebaseio.com",
+            projectId: "timer-7d58b",
+            storageBucket: "timer-7d58b.firebasestorage.app",
+            messagingSenderId: "844772767109",
+            appId: "1:844772767109:web:47702bc8de9176a66080ec",
+            measurementId: "G-XEDQJKGZ9Z"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const timerRef = database.ref('timer');
+
+        // 여기에 기존 타이머 코드를 넣으세요
+    </script>
+</body>
+</html>
