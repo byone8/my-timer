@@ -3,6 +3,9 @@
 <head>
     <title>도전실패성공</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -19,7 +22,6 @@
             font-weight: 600;
             margin-bottom: 20px;
             color: #1d1d1f;
-            font-family: -apple-system, 
         }
         #timer {
             font-size: 76px;
@@ -29,7 +31,6 @@
             padding: 1px;
             letter-spacing: -0.005em;
         }
-        /* 타이머가 작동 중일 때만 흔들림 효과 적용 */
         #timer.running {
             animation: vibrate 0.1s infinite;
         }
@@ -112,32 +113,106 @@
             font-size: 14px;
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <h1>도전실패성공</h1>
-    <img src="gogo.gif" alt="gogo" style="width: 300px; height: auto;">
+    <img src="https://via.placeholder.com/300x100.png?text=GOGO" alt="gogo" style="width: 300px; height: auto;">
     <div id="timer">00:00:00.00</div>
     <div class="button-container">
-        <button id="startBtn" onclick="startTimer()">시작</button>
-        <button id="stopBtn" onclick="stopTimer()">정지</button>
-        <button id="resetBtn" onclick="resetTimer()">초기화</button>
+        <button id="startBtn">시작</button>
+        <button id="stopBtn">정지</button>
+        <button id="resetBtn">초기화</button>
     </div>
     <input type="text" id="projectName" placeholder="도전명 입력">
     <div id="projectDisplay"></div>
     <div id="result"></div>
     <script>
-        let startTime = null;
-        let timerInterval = null;
-        const storageKey = "simpleTimer";
-        let startDate = null;
-        let projectName = '';
+        // Firebase 설정 (본인의 프로젝트 설정으로 교체하세요!)
+        const firebaseConfig = {
+            apiKey: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345678",
+            authDomain: "your-project-id.firebaseapp.com",
+            databaseURL: "https://your-project-id.firebaseio.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdefghijk1234567890"
+        };
 
-        // 페이지 로드 시 저장된 프로젝트명 불러오기
-        if(localStorage.getItem('projectName')) {
-            document.getElementById('projectName').value = localStorage.getItem('projectName');
-            document.getElementById('projectDisplay').textContent = "프로젝트명: " + localStorage.getItem('projectName');
+        // Firebase 초기화
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        let timerInterval = null;
+        let startDate = null;
+
+        // 실시간 데이터베이스 연결
+        const timerRef = database.ref('timer');
+        timerRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.isRunning) {
+                startDate = new Date(data.startTime);
+                updateTimer();
+                document.getElementById('timer').classList.add('running');
+            } else {
+                document.getElementById('timer').textContent = '00:00:00.00';
+                document.getElementById('timer').classList.remove('running');
+            }
+        });
+
+        // 타이머 업데이트 함수
+        function updateTimer() {
+            if (!startDate) return;
+            const elapsed = Date.now() - startDate.getTime();
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const centiseconds = Math.floor((elapsed % 1000) / 10);
+            document.getElementById('timer').textContent = 
+                `${String(hours).padStart(2, '0')}:` +
+                `${String(minutes).padStart(2, '0')}:` +
+                `${String(seconds).padStart(2, '0')}.` +
+                `${String(centiseconds).padStart(2, '0')}`;
         }
 
+        // 이벤트 리스너 설정
+        document.getElementById('startBtn').addEventListener('click', () => {
+            const projectName = document.getElementById('projectName').value;
+            const startTime = Date.now();
+            database.ref('timer').set({
+                isRunning: true,
+                startTime: startTime,
+                projectName: projectName
+            });
+            document.getElementById('projectDisplay').textContent = `프로젝트명: ${projectName}`;
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            database.ref('timer').update({ isRunning: false });
+            if (startDate) {
+                const stopDate = new Date();
+                const elapsed = stopDate - startDate;
+                document.getElementById('result').innerHTML = `
+                    <div class="start-stop-time">
+                        시작시간: ${formatTime(startDate)}<br>
+                        정지시간: ${formatTime(stopDate)}
+                    </div>
+                    <div class="success-time">
+                        ${document.getElementById('projectName').value} 성공시간<br>
+                        <div>${formatDuration(elapsed)}</div>
+                    </div>
+                `;
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            database.ref('timer').remove();
+            document.getElementById('projectDisplay').textContent = '';
+            document.getElementById('result').textContent = '';
+        });
+
+        // 유틸리티 함수
         function formatTime(date) {
             return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
                    `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -148,108 +223,8 @@
             const hours = Math.floor((elapsed % 86400000) / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
-            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
+            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초`;
         }
-
-        function loadTimerState() {
-             const storedState = localStorage.getItem(storageKey);
-            if (storedState) {
-                const { startTime: storedStartTime, isRunning } = JSON.parse(storedState);
-                if (isRunning) {
-                  startTime = storedStartTime;
-                  startDate = new Date(storedStartTime);
-                  timerInterval = setInterval(updateTimer, 10);
-                  document.getElementById('timer').classList.add('running');
-                 } else {
-                    updateTimerDisplay(storedStartTime);
-                }
-            } else {
-                updateTimerDisplay(null);
-            }
-        }
-
-        function saveTimerState() {
-           const isRunning = timerInterval !== null;
-            if (startTime) {
-             localStorage.setItem(storageKey, JSON.stringify({ startTime: startTime, isRunning }));
-            } else {
-             localStorage.removeItem(storageKey);
-            }
-        }
-
-        function startTimer() {
-            projectName = document.getElementById('projectName').value;
-            localStorage.setItem('projectName', projectName);
-            document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
-            startTime = Date.now();
-            startDate = new Date();
-            timerInterval = setInterval(updateTimer, 10);
-            document.getElementById('result').textContent = '';
-             document.getElementById('timer').classList.add('running');
-            saveTimerState();
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            document.getElementById('timer').classList.remove('running');
-            
-            const stopDate = new Date();
-            const elapsed = stopDate - startDate;
-            
-            document.getElementById('result').innerHTML = 
-                `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
-                `정지시간: ${formatTime(stopDate)}</div><br>` +
-                `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
-                 saveTimerState();
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            startTime = null;
-            startDate = null;
-            document.getElementById('timer').textContent = '00:00:00.00';
-            document.getElementById('projectDisplay').textContent = '';
-            document.getElementById('result').textContent = '';
-            document.getElementById('timer').classList.remove('running');
-            saveTimerState();
-        }
-
-        function updateTimer() {
-            if(!startTime) return;
-            
-            const elapsed = Date.now() - startTime;
-            const hours = Math.floor(elapsed / 3600000);
-            const minutes = Math.floor((elapsed % 3600000) / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
-            const centiseconds = Math.floor((elapsed % 1000) / 10);
-            document.getElementById('timer').textContent = 
-                `${String(hours).padStart(2, '0')}:` +
-                `${String(minutes).padStart(2, '0')}:` +
-                `${String(seconds).padStart(2, '0')}.` +
-                `${String(centiseconds).padStart(2, '0')}`;
-            saveTimerState();
-        }
-
-        function updateTimerDisplay(storedStartTime) {
-             if (storedStartTime !== null) {
-                const elapsed = Date.now() - storedStartTime;
-                const hours = Math.floor(elapsed / 3600000);
-                const minutes = Math.floor((elapsed % 3600000) / 60000);
-                const seconds = Math.floor((elapsed % 60000) / 1000);
-                const centiseconds = Math.floor((elapsed % 1000) / 10);
-                 document.getElementById('timer').textContent = 
-                    `${String(hours).padStart(2, '0')}:` +
-                    `${String(minutes).padStart(2, '0')}:` +
-                    `${String(seconds).padStart(2, '0')}.` +
-                    `${String(centiseconds).padStart(2, '0')}`;
-            } else {
-                 document.getElementById('timer').textContent = '00:00:00.00';
-            }
-
-        }
-        loadTimerState();
     </script>
 </body>
 </html>
