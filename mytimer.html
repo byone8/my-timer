@@ -1,16 +1,13 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>도전실패성공</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             text-align: center;
-            padding: 20px;
+            padding: 50px;
             background: #ffffff;
             color: #1d1d1f;
             margin: 0;
@@ -20,26 +17,16 @@
         h1 {
             font-size: 40px;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 40px;
             color: #1d1d1f;
         }
         #timer {
             font-size: 76px;
-            font-weight: 700;
-            margin: 1px;
+            font-weight: 500;
+            margin: 30px;
             color: #1d1d1f;
-            padding: 1px;
+            padding: 20px;
             letter-spacing: -0.005em;
-        }
-        #timer.running {
-            animation: vibrate 0.1s infinite;
-        }
-        @keyframes vibrate {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-1px); }
-            50% { transform: translateY(1px); }
-            75% { transform: translateY(-1px); }
-            100% { transform: translateX(0); }
         }
         button {
             padding: 12px 30px;
@@ -73,22 +60,6 @@
         #resetBtn:hover {
             background: #98989D;
         }
-        #projectName {
-            margin: 20px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 15px;
-            font-weight: 600;
-            width: 80%;
-            max-width: 400px;
-            color: #86868b;
-        }
-        #projectDisplay {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 10px 0;
-        }
         #result {
             margin-top: 30px;
             color: #86868b;
@@ -96,75 +67,69 @@
             line-height: 1.6;
         }
         .button-container {
-            margin: 10px 0;
-        }
-        .success-time {
-            font-size: 18px;
-            color: #000000; 
-            font-weight: bold;
-            margin-top: 10px;
-            line-height: 1.4;
-        }
-        .success-time div {
-            font-size: 22px;
-            color: blue;
-        }
-        .start-stop-time {
-            font-size: 14px;
+            margin: 20px 0;
         }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <h1>도전실패성공</h1>
-    <img src="https://via.placeholder.com/300x100.png?text=GOGO" alt="gogo" style="width: 300px; height: auto;">
     <div id="timer">00:00:00.00</div>
     <div class="button-container">
-        <button id="startBtn">시작</button>
-        <button id="stopBtn">정지</button>
-        <button id="resetBtn">초기화</button>
+        <button id="startBtn" onclick="startTimer()">시작</button>
+        <button id="stopBtn" onclick="stopTimer()">정지</button>
+        <button id="resetBtn" onclick="resetTimer()">초기화</button>
     </div>
-    <input type="text" id="projectName" placeholder="도전명 입력">
-    <div id="projectDisplay"></div>
     <div id="result"></div>
     <script>
-        // Firebase 설정 (본인의 프로젝트 설정으로 교체하세요!)
-        const firebaseConfig = {
-            apiKey: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345678",
-            authDomain: "your-project-id.firebaseapp.com",
-            databaseURL: "https://your-project-id.firebaseio.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project-id.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdefghijk1234567890"
-        };
-
-        // Firebase 초기화
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        let startTime = null;
         let timerInterval = null;
+        const storageKey = "simpleTimer";
         let startDate = null;
 
-        // 실시간 데이터베이스 연결
-        const timerRef = database.ref('timer');
-        timerRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.isRunning) {
-                startDate = new Date(data.startTime);
-                updateTimer();
-                document.getElementById('timer').classList.add('running');
-            } else {
-                document.getElementById('timer').textContent = '00:00:00.00';
-                document.getElementById('timer').classList.remove('running');
-            }
-        });
+        function formatTime(date) {
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
+                   `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
 
-        // 타이머 업데이트 함수
+        if(localStorage.getItem(storageKey)) {
+            startTime = parseInt(localStorage.getItem(storageKey));
+            startDate = new Date(startTime);
+            timerInterval = setInterval(updateTimer, 10);
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            startDate = new Date();
+            localStorage.setItem(storageKey, startTime);
+            timerInterval = setInterval(updateTimer, 10);
+            document.getElementById('result').textContent = '';
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
+            
+            const stopDate = new Date();
+            const successDate = new Date();
+            
+            document.getElementById('result').innerHTML = 
+                `시작시간: ${formatTime(startDate)}<br>` +
+                `정지시간: ${formatTime(stopDate)}<br>` +
+                `도전성공시간: ${formatTime(successDate)}`;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            localStorage.removeItem(storageKey);
+            startTime = null;
+            document.getElementById('timer').textContent = '00:00:00.00';
+            document.getElementById('result').textContent = '';
+        }
+
         function updateTimer() {
-            if (!startDate) return;
-            const elapsed = Date.now() - startDate.getTime();
+            if(!startTime) return;
+            
+            const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
@@ -176,55 +141,7 @@
                 `${String(centiseconds).padStart(2, '0')}`;
         }
 
-        // 이벤트 리스너 설정
-        document.getElementById('startBtn').addEventListener('click', () => {
-            const projectName = document.getElementById('projectName').value;
-            const startTime = Date.now();
-            database.ref('timer').set({
-                isRunning: true,
-                startTime: startTime,
-                projectName: projectName
-            });
-            document.getElementById('projectDisplay').textContent = `프로젝트명: ${projectName}`;
-        });
-
-        document.getElementById('stopBtn').addEventListener('click', () => {
-            database.ref('timer').update({ isRunning: false });
-            if (startDate) {
-                const stopDate = new Date();
-                const elapsed = stopDate - startDate;
-                document.getElementById('result').innerHTML = `
-                    <div class="start-stop-time">
-                        시작시간: ${formatTime(startDate)}<br>
-                        정지시간: ${formatTime(stopDate)}
-                    </div>
-                    <div class="success-time">
-                        ${document.getElementById('projectName').value} 성공시간<br>
-                        <div>${formatDuration(elapsed)}</div>
-                    </div>
-                `;
-            }
-        });
-
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            database.ref('timer').remove();
-            document.getElementById('projectDisplay').textContent = '';
-            document.getElementById('result').textContent = '';
-        });
-
-        // 유틸리티 함수
-        function formatTime(date) {
-            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ` +
-                   `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        }
-
-        function formatDuration(elapsed) {
-            const days = Math.floor(elapsed / 86400000);
-            const hours = Math.floor((elapsed % 86400000) / 3600000);
-            const minutes = Math.floor((elapsed % 3600000) / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
-            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초`;
-        }
+        updateTimer();
     </script>
 </body>
 </html>
