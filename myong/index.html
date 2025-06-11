@@ -13,10 +13,118 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-             padding: 10px;
+            padding: 10px;
             background: #ffffff;
             color: #1d1d1f;
-            margin: 묭</h1>
+            margin: 0;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 40px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1d1d1f;
+        }
+        #timer {
+            font-size: 76px;
+            font-weight: 700;
+            margin: 1px;
+            color: #1d1d1f;
+            padding: 1px;
+            letter-spacing: -0.005em;
+            white-space: nowrap;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        /* 타이머가 작동 중일 때만 흔들림 효과 적용 */
+        #timer.running {
+            animation: vibrate 0.1s infinite;
+        }
+        @keyframes vibrate {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            50% { transform: translateY(1px); }
+            75% { transform: translateY(-1px); }
+            100% { transform: translateX(0); }
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 17px;
+            border: none;
+            border-radius: 980px;
+            cursor: pointer;
+            color: white;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            margin: 5px;
+        }
+        #startBtn {
+            background: #0071e3;
+        }
+        #startBtn:hover {
+            background: #0077ED;
+        }
+        #stopBtn {
+            background: #ff3b30;
+        }
+        #stopBtn:hover {
+            background: #FF453A;
+        }
+        #resetBtn {
+            background: #8e8e93;
+        }
+        #resetBtn:hover {
+            background: #98989D;
+        }
+        #projectName {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 15px;
+            font-weight: 600;
+            width: 80%;
+            max-width: 400px;
+            color: #86868b;
+        }
+        #projectDisplay {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        #result {
+            margin-top: 30px;
+            color: #86868b;
+            font-size: 17px;
+            line-height: 1.6;
+        }
+        .button-container {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .success-time {
+            font-size: 18px;
+            color: #000;
+            font-weight: bold;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+        .success-time div {
+            font-size: 22px;
+            color: blue;
+        }
+        .start-stop-time {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>전시원묭 타이머</h1>
     <img src="gogo.gif" alt="gogo" style="width: 300px; height: auto;">
     <div id="timer">00:00:00.00</div>
     <div class="button-container">
@@ -85,7 +193,7 @@
             const hours = Math.floor((elapsed % 86400000) / 3600000);
             const minutes = Math.floor((elapsed % 3600000) / 60000);
             const seconds = Math.floor((elapsed % 60000) / 1000);
-           return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
+            return `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 (${hours}시간 ${minutes}분 ${seconds}초)`;
         }
 
         function startTimer() {
@@ -93,16 +201,14 @@
             startTime = Date.now();
             startDate = new Date();
 
-            // Firebase에 타이머 상태 저장
             timerRef.set({
                 isRunning: true,
-                startTime: startTime,
-                projectName: projectName
+                startTime,
+                projectName
             });
         }
 
         function stopTimer() {
-            // Firebase에 타이머 정지 상태 저장
             timerRef.set({
                 isRunning: false,
                 startTime: null,
@@ -119,7 +225,6 @@
         }
 
         function resetTimer() {
-            // Firebase에 타이머 초기화 상태 저장
             timerRef.set({
                 isRunning: false,
                 startTime: null,
@@ -133,7 +238,7 @@
         }
 
         function updateTimer() {
-            if(!startTime) return;
+            if (!startTime) return;
 
             const elapsed = Date.now() - startTime;
             const hours = Math.floor(elapsed / 3600000);
