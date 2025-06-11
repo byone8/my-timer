@@ -124,7 +124,7 @@
     </style>
 </head>
 <body>
-    <h1>전시원묭 타이머</h1>
+    <h1>전시원묭</h1>
     <img src="gogo.gif" alt="gogo" style="width: 300px; height: auto;">
     <div id="timer">00:00:00.00</div>
     <div class="button-container">
@@ -169,7 +169,7 @@
                     projectName = data.projectName;
 
                     document.getElementById('projectName').value = projectName;
-                    document.getElementById('projectDisplay').textContent = "프로젝트명: " + projectName;
+                    document.getElementById('projectDisplay').textContent = "묭:" + projectName;
 
                     if (!timerInterval) {
                         timerInterval = setInterval(updateTimer, 10);
