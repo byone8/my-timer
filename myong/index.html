@@ -169,7 +169,7 @@
                     projectName = data.projectName;
 
                     document.getElementById('projectName').value = projectName;
-                    document.getElementById('projectDisplay').textContent = "묭:" + projectName;
+                    document.getElementById('projectDisplay').textContent = "" + projectName;
 
                     if (!timerInterval) {
                         timerInterval = setInterval(updateTimer, 10);
@@ -221,7 +221,7 @@
             document.getElementById('result').innerHTML =
                 `<div class="start-stop-time">시작시간: ${formatTime(startDate)}<br>` +
                 `정지시간: ${formatTime(stopDate)}</div><br>` +
-                `<div class="success-time">${projectName} 성공시간<br><br><div>${formatDuration(elapsed)}</div></div>`;
+                `<div class="success-time">${projectName}하나씩 쌓기 내것화 성공<br><br><div>${formatDuration(elapsed)}</div></div>`;
         }
 
         function resetTimer() {
